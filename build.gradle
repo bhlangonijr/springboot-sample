@@ -1,0 +1,201 @@
+buildscript {
+    ext {
+        springBootVersion = '1.2.2.RELEASE'
+        springLoadedVersion = '1.2.0.RELEASE'
+        ratpackVersion = '0.9.16'
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "http://repo.spring.io/release" }
+        maven { url "http://repo.spring.io/milestone" }
+        maven { url "http://repo.spring.io/snapshot" }
+        maven { url 'https://oss.sonatype.org/content/repositories/releases/' }
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    }
+    dependencies {
+        classpath("net.saliman:gradle-cobertura-plugin:2.2.6")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
+        classpath("org.springframework:springloaded:$springLoadedVersion")
+        classpath("io.ratpack:ratpack-gradle:$ratpackVersion")
+    }
+}
+
+group 'neppo.com.br'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+description = 'springboot sample'
+
+compileJava.enabled = true
+
+mainClassName = "neppo.com.br.Application"
+
+springBoot {
+    classifier = 'exec'
+}
+
+jar {
+    baseName = "springboot-sample"
+    version = project.version
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+sourceSets.main.resources.srcDirs = ["src/main/resources"]
+
+// IDEA config
+idea.module {
+    ext.gradleCacheVariable = 'GRADLE_CACHE'
+    ext.downloadJavadoc = true
+}
+idea.project {
+    ext.jdkName = '1.8'
+    ext.wildcards = ['!?*.java', '!?*.groovy']
+}
+
+// Groovy config
+sourceSets.main.groovy.srcDirs = ["src/main/groovy"]
+groovydoc.groovyClasspath = configurations.default
+
+
+repositories {
+    jcenter()
+    mavenLocal()
+    mavenCentral()
+    maven { url "http://repo1.maven.org/maven2/" }
+    maven { url "http://maven.restlet.org" }
+    maven { url "http://repo.spring.io/release" }
+    maven { url "http://repo.spring.io/milestone" }
+    maven { url "http://repo.spring.io/snapshot" }
+    maven { url 'https://oss.sonatype.org/content/repositories/releases/' }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+}
+
+def springVersion = "4.1.5.RELEASE"
+def springIntegrationVersion = "4.1.2.RELEASE"
+def springIntegrationDslVersion = "1.0.1.RELEASE"
+def metricsVersion = "3.1.0"
+def hystrixVersion = "1.4.9"
+
+// Spring
+ext.springFramework = "org.springframework:spring-context:$springVersion"
+ext.springContextSupport = "org.springframework:spring-context-support:$springVersion"
+ext.springBeans = "org.springframework:spring-beans:$springVersion"
+ext.springBoot = "org.springframework.boot:spring-boot:$springBootVersion"
+
+// Test dependencies
+ext.junit = 'junit:junit:4.11'
+ext.spock = 'org.spockframework:spock-core:0.7-groovy-2.0'
+ext.jsonPath = 'com.jayway.jsonpath:json-path:0.8.1'
+ext.cglib = 'cglib:cglib:2.2'
+ext.spockSpring = 'org.spockframework:spock-spring:0.7-groovy-2.0'
+ext.springTest = "org.springframework:spring-test:$springVersion"
+
+// Hystrix
+ext.hystrixCore = "com.netflix.hystrix:hystrix-core:${hystrixVersion}"
+ext.hystrixMetricsPublisher = "com.netflix.hystrix:hystrix-servo-metrics-publisher:${hystrixVersion}"
+ext.hystrixJavanica = "com.netflix.hystrix:hystrix-javanica:${hystrixVersion}"
+ext.hystrixStream = "com.netflix.hystrix:hystrix-metrics-event-stream:${hystrixVersion}"
+
+dependencies {
+
+    compile springFramework
+    compile springContextSupport
+    compile springBeans
+    compile springBoot
+    compile hystrixCore
+    compile hystrixJavanica
+    compile hystrixStream
+    compile hystrixMetricsPublisher
+
+    compile("org.springframework.boot:spring-boot:$springBootVersion")
+    compile("org.springframework.integration:spring-integration-core:$springIntegrationVersion")
+    compile("org.springframework.integration:spring-integration-java-dsl:$springIntegrationDslVersion")
+    compile("org.springframework.integration:spring-integration-stream:$springIntegrationVersion")
+    compile("org.springframework.integration:spring-integration-rmi:$springIntegrationVersion")
+    compile("org.springframework.integration:spring-integration-jmx:$springIntegrationVersion")
+    compile("org.springframework.integration:spring-integration-amqp:$springIntegrationVersion")
+    compile("org.springframework:spring-webmvc:$springIntegrationVersion")
+
+    compile("io.dropwizard.metrics:metrics-core:$metricsVersion")
+    compile("io.dropwizard.metrics:metrics-healthchecks:$metricsVersion")
+    compile("io.dropwizard.metrics:metrics-graphite:$metricsVersion")
+
+    compile("org.springframework.boot:spring-boot-starter")
+
+    compile("org.springframework.boot:spring-boot-starter")
+    compile("org.springframework.boot:spring-boot-starter-tomcat")
+
+    testCompile junit
+    testCompile spock
+    testCompile cglib
+    testCompile springTest
+    testCompile spockSpring
+    testCompile("org.springframework.boot:spring-boot-starter-test")
+}
+
+// Tasks
+test {
+    String testType = System.properties['test.type']
+    if (testType == 'integration') {
+        include '**/*IntegrationTest.*'
+        include '**/*IntegrationSpec.*'
+    } else if (testType == 'unit') {
+        include '**/*Test.*'
+        include '**/*Spec.*'
+        exclude '**/*IntegrationTest.*'
+        exclude '**/*IntegrationSpec.*'
+    } else if (testType == 'all') {
+        include '**/*Test.*'
+        include '**/*Spec.*'
+    } else {
+        //Default to unit
+        include '**/*Test.*'
+        include '**/*Spec.*'
+        exclude '**/*IntegrationTest.*'
+        exclude '**/*IntegrationSpec.*'
+    }
+
+    // Prints getResults of test inline
+    afterSuite { desc, result ->
+        // Don't report on modules with no test suites
+        if (!desc.className) {
+            return
+        }
+
+        String testStatus
+        if (System.properties['nocolor']) {
+            testStatus = result.resultType
+        } else if (result.resultType != org.gradle.api.tasks.testing.TestResult.ResultType.SUCCESS) {
+            // Print in red if failed
+            testStatus = "\033[31m${result.resultType}\033[0m"
+        } else {
+            // Print in green if success/skipped
+            testStatus = "\033[32m${result.resultType}\033[0m"
+        }
+        println "Test suite ${desc.name}: ${testStatus}"
+    }
+}
+
+task integrationTest(type: Test) {
+    description = 'Runs the integration tests :D'
+    group = 'Verification'
+    include '**/*IntegrationTest.*'
+    include '**/*IntegrationSpec.*'
+    afterSuite { desc, result ->
+        if (desc.className) {
+            println "Test suite ${desc.name}: ${result.resultType}"
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.4'
+}
